@@ -2,7 +2,29 @@
 
 A private study workspace that turns classroom materials into source-linked guides, flashcards, and practice questions.
 
-- Upload multiple PDF, PowerPoint (.pptx), Word (.docx), TXT, Markdown, or CSV files. Files are parsed in the browser and saved with extracted text; 30 MB per file with no application file-count limit. Scanned pages, embedded images, and audio/video are not transcribed. Legacy .ppt and .doc files must be exported first.
+## Quick start: use the site
+
+**[Open Studyroom](https://studyroom-neeb.vince64.chatgpt.site)** — no installation needed. The hosted site is private; sign in with the ChatGPT account that owns it.
+
+1. **Enter your subject.** For example, “Biology: cell division” or “Software Engineering.”
+2. **Add your teacher’s materials.** Upload your PDFs, PowerPoint slides, notes, or images. Add as many files or batches as you need; overlapping concepts are combined.
+3. **Choose Built-in.** Leave the guide generator on **Built-in · source-based study** to study without an OpenAI API key or API charges.
+4. **Click Create study guide.** Take the short knowledge check and mark answers you are unsure about. Your guide will prioritize topics that need review. You can also skip the check and view the full guide.
+5. **Start studying.** Read the topic explanations, practice with flashcards and quizzes, or try an exam. Open **Study tools** for your mistake notebook, daily plan, focused sessions, and printable review sheets.
+6. **Return whenever you want.** Open **My guides** or **Continue studying** to pick up where you left off. Wait for the saved indicator before closing the page.
+
+### Using lecture videos
+
+Choose **Add a lecture video** and select your recording. You can attach SRT or VTT captions; without captions, Studyroom automatically transcribes English speech on your device. Keep the tab open until processing and upload finish, then use **Review transcript** to check and correct the text. Turn on **Read text shown in the video** to include text from the video’s slides.
+
+### Adding new lectures later
+
+Open your saved guide and choose **Update materials** to add more files. Progress on unchanged concepts is preserved, so you can keep building the same guide throughout the course.
+
+## What Studyroom supports
+
+- Upload multiple PDF, PowerPoint (.pptx), Word (.docx), TXT, Markdown, CSV, PNG, JPG, or WebP files. Documents and images allow 30 MB per file with no application file-count limit. Printed English in scanned pages and embedded images can be read in the browser; review extracted text for mistakes. Legacy .ppt and .doc files must be exported first.
+- Lecture videos support MP4, MOV, M4V, and WebM, up to 1 GB and 3 hours each, with automatic English transcription or supplied captions. Optional screen-text reading checks for slide changes every 5 seconds; upload original slides for material that brief frames, diagrams, or handwriting may miss.
 - Repeated topic headings and similar facts are combined, while distinct facts and source references remain available. Built-in generation selects key passages and creates recall questions; it does not use a language model.
 - An optional knowledge check samples distinct topics. Missed, unsure, and unchecked topics remain in the focused guide. The full guide is always available.
 - Guides, diagnostic answers, quiz answers, and flashcard progress persist using D1 and R2.
