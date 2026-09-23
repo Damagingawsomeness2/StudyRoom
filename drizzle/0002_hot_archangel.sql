@@ -1,0 +1,1 @@
+ALTER TABLE `materials` ADD `ocr` text DEFAULT '{}' NOT NULL;

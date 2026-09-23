@@ -1,0 +1,3 @@
+import{storage,RequestError}from './server';
+export type LectureUpload={id:string;name:string;kind:string;size:number;upload_id:string;created_at:number};
+export async function lectureUpload(id:string){const{db,bucket}=storage();const row=await db.prepare('SELECT id,name,kind,size,upload_id,created_at FROM lecture_uploads WHERE id = ?').bind(id).first<LectureUpload>();if(!row)throw new RequestError('This video upload is no longer available. Add the video again.',404);if(Date.now()-row.created_at>24*60*60*1000)throw new RequestError('This upload expired. Add the video again.',410);return{db,bucket,row,upload:bucket.resumeMultipartUpload('originals/'+id,row.upload_id)};}

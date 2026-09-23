@@ -1,0 +1,2 @@
+import{storage,validId,fail,RequestError}from '@/lib/server';
+export async function GET(_request:Request,{params}:{params:Promise<{id:string}>}){try{const {db,bucket}=storage(),id=validId((await params).id),row=await db.prepare('SELECT mime FROM diagram_assets WHERE id=?').bind(id).first<{mime:string}>(),image=await bucket.get('diagrams/'+id);if(!row||!image)throw new RequestError('Diagram not found.',404);return new Response(image.body,{headers:{'Content-Type':row.mime,'Cache-Control':'private, max-age=3600','X-Content-Type-Options':'nosniff'}});}catch(e){return fail(e);}}

@@ -1,0 +1,5 @@
+import type{Guide,Card}from'./study-types.ts';
+const escape=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
+export function reviewSheetHtml(guide:Guide,cards:Card[],now=Date.now()){
+ return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>'+escape(guide.subject)+' — Review sheet</title><style>body{font:16px/1.6 system-ui;max-width:800px;margin:40px auto;padding:24px;color:#17203b}article{break-inside:avoid;border-top:1px solid #ccd4e0;padding:20px 0}p{white-space:pre-wrap}small{color:#4d5b70}h1{font-size:30px}@media print{body{margin:0;padding:0}}</style></head><body><h1>'+escape(guide.subject)+'</h1><p>Review sheet · '+cards.length+' concepts · '+escape(new Date(now).toLocaleDateString('en-US'))+'</p>'+cards.map(c=>'<article><h2>'+escape(c.front)+'</h2><p>'+escape(c.back)+'</p>'+(c.review?'<p>Check this source: '+escape(c.review)+'</p>':'')+'<small>'+[...new Set(c.citations.map(s=>s.name+' · '+s.label))].map(escape).join('<br>')+'</small></article>').join('')+'</body></html>';
+}

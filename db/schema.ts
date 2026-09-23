@@ -1,0 +1,7 @@
+import{sqliteTable,text,integer}from 'drizzle-orm/sqlite-core';
+export const materials=sqliteTable('materials',{id:text('id').primaryKey(),name:text('name').notNull(),kind:text('kind').notNull(),size:integer('size').notNull(),units:integer('units').notNull(),warnings:text('warnings').notNull(),ocr:text('ocr').notNull().default('{}'),lecture:text('lecture').notNull().default('{}'),createdAt:integer('created_at').notNull()});
+export const lectureUploads=sqliteTable('lecture_uploads',{id:text('id').primaryKey(),name:text('name').notNull(),kind:text('kind').notNull(),size:integer('size').notNull(),uploadId:text('upload_id').notNull(),createdAt:integer('created_at').notNull()});
+export const guides=sqliteTable('guides',{id:text('id').primaryKey(),subject:text('subject').notNull(),sourceCount:integer('source_count').notNull(),cardCount:integer('card_count').notNull(),mode:text('mode').notNull(),createdAt:integer('created_at').notNull(),progress:text('progress').notNull()});
+export const workspace=sqliteTable('workspace',{id:integer('id').primaryKey(),draftUpdatedAt:integer('draft_updated_at'),resumeGuideId:text('resume_guide_id')});
+export const organization=sqliteTable('organization',{id:integer('id').primaryKey(),data:text('data').notNull(),revision:integer('revision').notNull().default(0)});
+export const diagramAssets=sqliteTable('diagram_assets',{id:text('id').primaryKey(),guideId:text('guide_id').notNull(),name:text('name').notNull(),mime:text('mime').notNull(),createdAt:integer('created_at').notNull()});
