@@ -1,4 +1,5 @@
 import{validatedReadingReport}from './reading-report.ts';
+import{TRANSCRIPT_ISSUES,TRANSCRIPT_SOURCES}from './lecture-options.ts';
 import type{LectureSummary,Parsed,TranscriptReading,Unit}from './study-types';
 export const VIDEO_EXTENSIONS=['mp4','m4v','mov','webm'];
 export const VIDEO_ACCEPT=VIDEO_EXTENSIONS.map(e=>'.'+e).join(',');
@@ -11,7 +12,8 @@ export function timeLabel(seconds:number){const n=Math.max(0,Math.floor(seconds)
 export function validatedTranscript(value:unknown,duration=MAX_LECTURE_SECONDS):TranscriptReading|undefined{
  if(!value||typeof value!=='object')return;const x=value as Partial<TranscriptReading>;
  if(typeof x.start!=='number'||typeof x.end!=='number'||!Number.isFinite(x.start)||!Number.isFinite(x.end)||x.start<0||x.end<=x.start||x.end>duration+.1)return;
- return{start:x.start,end:Math.min(duration,x.end),reviewed:x.reviewed===true,...(x.kind==='screen'?{kind:'screen' as const}:{})};
+ const issues=Array.isArray(x.issues)?[...new Set(x.issues.filter(v=>TRANSCRIPT_ISSUES.includes(v)))]:[];
+ return{start:x.start,end:Math.min(duration,x.end),reviewed:x.reviewed===true,...(x.kind==='screen'?{kind:'screen' as const}:{}),...(issues.length?{issues}:{}),...(x.source&&TRANSCRIPT_SOURCES.includes(x.source)?{source:x.source}:{})};
 }
 export function lectureSummary(units:Unit[],duration:number):LectureSummary{return{duration,units:units.filter(u=>u.transcript).length,needsReview:units.filter(u=>u.transcript&&!u.transcript.reviewed).length};}
 export function lectureWarnings(units:Unit[],warnings:string[]=[]){const count=units.filter(u=>u.transcript&&!u.transcript.reviewed).length;return[...warnings.filter(w=>!w.startsWith('Lecture transcript:')),...(units.some(u=>u.transcript)?[`Lecture transcript: ${count?count+(count===1?' section needs':' sections need')+' checking before scored questions.':'Checked by you.'} Speech and screen-text recognition can miss terms, numbers, or negation. Check the video before relying on the extracted text.`]:[])];}

@@ -1,8 +1,9 @@
 import {noteMistake,sourceSequences} from './study-tools.ts';
 import {referenceMatcher,explicitAliases,topicName} from './source-matching.ts';
+import {administrativeHeading,isAdministrative,isLearningGoal,selectCoreGuide} from './guide-selection.ts';
 import {needsOcrReview} from './ocr-reading.ts';
 import type { Citation, Evidence, Guide, Material, Parsed, PracticeRecord, ProgressData, Question, Topic } from './study-types';
-export const BUILT_IN_VERSION = 5;
+export const BUILT_IN_VERSION = 6;
 
 const STOP = new Set('a an the about above after again also among another around because been before being below between both called can could does each either even every for from further has have having here however into itself just known like many more most much must of on only other over same should some such than that their them then there these they this those through under until upon used using very well were what when where which while will with within would your example figure chapter slide page lecture copyright reserved rights professor instructor course introduction overview summary notes topic section important study and or to in at as by be is are it'.split(' '));
 const canonical: Record<string, string> = { mitochondrion: 'mitochondria', mitochondrial: 'mitochondria', produces: 'produce', producing: 'produce', generates: 'produce', generating: 'produce', generate: 'produce' };
@@ -75,7 +76,7 @@ function differenceKey(s: string) {
   return conceptKey(subject) + '|' + signature(expanded.replace(/\b(?:no|not|never)\b/g, '').replace(/[-+]?\d+(?:[.,]\d+)?/g, ' NUMBER '));
 }
 const sourceCheck = 'These passages differ in a number or negative statement. Compare the sources with your teacher before relying on either. This idea is excluded from scored questions.';
-type GuideInput = { id: string; subject: string; focus: string; depth: 'quick' | 'deep'; mode: Guide['mode'] };
+type GuideInput = { id: string; subject: string; focus: string; depth: 'quick' | 'deep'; cardTarget?: number; mode: Guide['mode'] };
 type Fact = { topicId: string; evidence: Evidence; definition: NonNullable<ReturnType<typeof definition>> };
 
 function applicationPrompt(body: string): string | null {
@@ -127,6 +128,7 @@ function addRelationshipQuestions(guide: Guide) {
 export function createGuideBuilder(input: GuideInput) {
   const guide: Guide = { ...input, createdAt: Date.now(), topics: [], cards: [], questions: [], materials: [], warnings: [], merged: 0, builtIn: { version: BUILT_IN_VERSION, passages: 0, sourceChecks: 0, readableUnits: 0 }, sourceCoverage: [] };
   const headings = new Map<string, Topic[]>();
+  const learningGoals: string[] = [];
   const addSource = ({ material, parsed }: { material: Material; parsed: Parsed }) => {
     guide.materials.push(material);
     guide.warnings.push(...parsed.warnings.map(w => material.name + ': ' + w));
@@ -136,10 +138,18 @@ export function createGuideBuilder(input: GuideInput) {
     for (const [unitIndex, unit] of parsed.units.entries()) {
       if((!unit.ocr||unit.ocr.reviewed)&&(!unit.transcript||unit.transcript.reviewed))for(const seq of sourceSequences(unit.text,citationFor(material,unit.label,unit.text))){const prior=guide.sequences?.find(s=>s.id===seq.id);if(prior)prior.citations=mergeCites(prior.citations,seq.citations);else(guide.sequences??=[]).push(seq);}
       for (const [sectionIndex, section] of sections(unit.text, unit.label).entries()) {
-        let points = statements(section.text);
+        if (administrativeHeading(section.title) || isLearningGoal(section.title)) {
+          if (isLearningGoal(section.title)) learningGoals.push(section.text);
+          coverage.notRepresented.push({label: unit.label, reason: isLearningGoal(section.title) ? 'Learning goals inform topic selection; they are not separate quiz questions.' : 'Class administration or reference material is not included in study questions.'});
+          continue;
+        }
+        const rawPoints = statements(section.text);
+        learningGoals.push(...rawPoints.filter(isLearningGoal));
+        let points = rawPoints.filter(p => !isAdministrative(p) && !isLearningGoal(p));
+        if (points.length !== rawPoints.length) coverage.notRepresented.push({label: unit.label, reason: 'Administrative reminders and learning-goal instructions are not separate study items.'});
         const longPassage = Array.from(new Intl.Segmenter('en', { granularity: 'sentence' }).segment(section.text), x => x.segment).some(s => s.length > 1800);
         if (longPassage) coverage.notRepresented.push({ label: unit.label, reason: 'Some long passages were not turned into study items. Review the original or break them into shorter notes.' });
-        if (!points.length && clean(section.text).length >= 24 && clean(section.text).length <= 1800) points = [clean(section.text)];
+        if (!rawPoints.length && !isAdministrative(section.text) && !isLearningGoal(section.text) && clean(section.text).length >= 24 && clean(section.text).length <= 1800) points = [clean(section.text)];
         if (!points.length) { if (!longPassage) coverage.notRepresented.push({ label: unit.label, reason: 'This section did not contain enough usable text for a study item.' }); continue; }
         const title = (generic.test(section.title)||!!unit.transcript) ? definition(points[0])?.term || section.title : section.title;
         const titleKey = conceptKey(title), citation = citationFor(material, unit.label, unit.text);
@@ -276,6 +286,7 @@ export function createGuideBuilder(input: GuideInput) {
     const uniqueCards = new Map<string, typeof guide.cards[number]>();
     for (const card of guide.cards) { const prior = uniqueCards.get(card.id); if (prior) prior.citations = mergeCites(prior.citations, card.citations); else uniqueCards.set(card.id, card); }
     guide.cards = [...uniqueCards.values()];
+    selectCoreGuide(guide, learningGoals);
     const allEvidence = guide.topics.flatMap(t => t.evidence || []);
     guide.builtIn!.passages = allEvidence.length;
     guide.builtIn!.sourceChecks = allEvidence.filter(e => e.review).length;

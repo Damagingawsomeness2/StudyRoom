@@ -1,7 +1,8 @@
 import type {StudyExtras,Sequence} from './study-tools';
+import type {LectureOptions,TranscriptIssue,TranscriptSource} from './lecture-options';
 export type ImageReference={page?:number;path?:string;crop?:{left:number;top:number;right:number;bottom:number}};
 export type OcrReading={confidence:number;reviewed:boolean;images:ImageReference[]};
-export type TranscriptReading={start:number;end:number;reviewed:boolean;kind?:'screen'};
+export type TranscriptReading={start:number;end:number;reviewed:boolean;kind?:'screen';issues?:TranscriptIssue[];source?:TranscriptSource};
 export type Unit={label:string;text:string;ocr?:OcrReading;transcript?:TranscriptReading};
 export type OcrSummary={units:number;needsReview:number;reviewedAt?:number};
 export type LectureSummary={duration:number;units:number;needsReview:number;reviewedAt?:number};
@@ -15,7 +16,7 @@ export type Topic={id:string;title:string;points:string[];citations:Citation[];e
 export type Card={id:string;topicId:string;front:string;back:string;citations:Citation[];review?:string};
 export type Question={id:string;topicId:string;prompt:string;options:string[];correct:number;explanation:string;citations:Citation[];evidenceIds?:string[];kind?:'definition'|'application'|'cause'|'comparison'};
 export type SourceCoverage={sourceId:string;totalUnits?:number;readableLabels:string[];unreadable:ReadingIssue[];notRepresented:ReadingIssue[]};
-export type Guide={id:string;subject:string;displayName?:string;focus:string;depth:'quick'|'deep';createdAt:number;mode:'materials'|'general'|'example';topics:Topic[];cards:Card[];questions:Question[];materials:Material[];warnings:string[];merged:number;model?:string;aiEnhanced?:boolean;builtIn?:{version:number;passages:number;sourceChecks:number;readableUnits:number};sourceCoverage?:SourceCoverage[];sequences?:Sequence[]};
+export type Guide={id:string;subject:string;displayName?:string;focus:string;depth:'quick'|'deep';cardTarget?:number;createdAt:number;mode:'materials'|'general'|'example';topics:Topic[];cards:Card[];questions:Question[];materials:Material[];warnings:string[];merged:number;model?:string;aiEnhanced?:boolean;builtIn?:{version:number;passages:number;sourceChecks:number;readableUnits:number};selection?:{availableCards:number;availableQuestions:number;minimumCards:number;relevantCards:number;targetCards:number;omittedTopics:number};sourceCoverage?:SourceCoverage[];sequences?:Sequence[]};
 export type PracticeRecord={attempts:number;streak:number;lastAt:number;dueAt:number;correct:boolean;confident:boolean};
 export type StudyScope='focus'|'full';
 export type FlashcardSession={order:string[];index:number;flip:boolean;reviewOnly:boolean;draft:string};
@@ -24,7 +25,7 @@ export type CheckSession={started:boolean;index:number;selected:number|null};
 export type ExamSession={questionIds:string[];startedAt:number;endsAt:number;finishedAt?:number;index:number;answers:Record<string,number>;flagged:string[]};
 export type StudySession={view:'guide'|'assessment';tab:'overview'|'cards'|'quiz'|'exam'|'coverage'|'sources'|'tools';tool?:string;full:boolean;flashcards?:Partial<Record<StudyScope,FlashcardSession>>;quizzes?:Partial<Record<StudyScope,QuizSession>>;check?:CheckSession;exam?:ExamSession};
 export type ProgressData=StudyExtras&{guideVersion?:number;known:string[];review:string[];answers:Record<string,number>;assessment:Record<string,number>;assessed:boolean;practice?:Record<string,PracticeRecord>;session?:StudySession};
-export type BuilderDraft={editing?:{id:string;version:number};subject:string;focus:string;depth:'quick'|'deep';model:string;files:{key:string;name:string;materialId?:string;screen?:boolean}[];notes:string;noteTitle:string;noteOpen:boolean};
+export type BuilderDraft={editing?:{id:string;version:number};subject:string;focus:string;depth:'quick'|'deep';cardTarget?:number;model:string;files:{key:string;name:string;materialId?:string;screen?:boolean;lectureOptions?:LectureOptions}[];notes:string;noteTitle:string;noteOpen:boolean};
 export type WorkspaceState={draft:BuilderDraft|null;resumeGuideId:string|null};
 export type Listing={id:string;subject:string;createdAt:number;sourceCount:number;cardCount:number;mode:string};
 export const emptyProgress=():ProgressData=>({known:[],review:[],answers:{},assessment:{},assessed:false});

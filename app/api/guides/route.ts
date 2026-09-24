@@ -9,11 +9,13 @@ export async function POST(request:Request){try{
  if(subject.length<2||subject.length>180)throw new RequestError('Enter a subject between 2 and 180 characters.');
  const focus=typeof x.focus==='string'?x.focus.slice(0,500):'',depth=x.depth==='quick'?'quick':'deep';
  if(!Array.isArray(x.sourceIds))throw new RequestError('Select your materials again.');
+ if(x.cardTarget!==undefined&&(!Number.isInteger(x.cardTarget)||x.cardTarget<5||x.cardTarget>200))throw new RequestError('Choose a whole-number card target between 5 and 200, or leave it automatic.');
+ const cardTarget=x.cardTarget as number|undefined;
  const replace=x.replaceGuideId?validId(x.replaceGuideId):null;
  const previousObject=replace?await bucket.get('guides/'+replace):null;
  const old=previousObject?await previousObject.json<Guide>():null;
  if(replace&&(!old||old.createdAt!==x.expectedVersion))throw new RequestError('This guide changed. Reopen it before updating its materials.',409);
- const ids=[...new Set(x.sourceIds.map(validId))] as string[],builder=createGuideBuilder({id:replace||crypto.randomUUID(),subject,focus,depth,mode:ids.length?'materials':'general'});
+ const ids=[...new Set(x.sourceIds.map(validId))] as string[],builder=createGuideBuilder({id:replace||crypto.randomUUID(),subject,focus,depth,cardTarget,mode:ids.length?'materials':'general'});
  for(const id of ids){const row=await db.prepare('SELECT id,name,kind,size,units,warnings,ocr,lecture FROM materials WHERE id = ?').bind(id).first<{id:string;name:string;kind:string;size:number;units:number;warnings:string;ocr:string;lecture:string}>();if(!row)throw new RequestError('A selected source was not found. Add it again.');const obj=await bucket.get('parsed/'+id);if(!obj)throw new RequestError('A selected source is unavailable. Add it again.');builder.addSource({material:{...row,warnings:JSON.parse(row.warnings),ocr:JSON.parse(row.ocr||'{}'),lecture:JSON.parse(row.lecture||'{}')},parsed:await obj.json<Parsed>()});}
  if(!ids.length)builder.addSource(await generalSource(subject));let guide=builder.finish();
  if(x.model){if(guide.materials.some(m=>m.ocr?.needsReview||m.lecture?.needsReview))throw new RequestError('Review uncertain image text and lecture transcripts before using an AI model, or choose Built-in.');guide=await enhanceGuide(guide,modelId(x.model));}

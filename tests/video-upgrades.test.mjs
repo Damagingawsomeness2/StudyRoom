@@ -1,0 +1,60 @@
+import assert from 'node:assert/strict';
+import {chooseAudioChannel, prepareSpeechAudio} from '../lib/audio-quality.ts';
+import {slideChange, slideCrop} from '../lib/slide-detection.ts';
+import {lectureReporter} from '../lib/lecture-progress.ts';
+import {transcriptSearch, priorityTranscriptSections, lectureChapters} from '../lib/transcript-review.ts';
+import {appendSpeechSegments} from '../lib/transcript.ts';
+import {cardBudget, minimumCards} from '../lib/guide-selection.ts';
+import {generateGuide} from '../lib/study-engine.ts';
+const wave = Float32Array.from({length:1000},(_,i)=>Math.sin(i/10)*.001);
+const quiet = prepareSpeechAudio(wave);
+assert.equal(quiet.silent,false);assert(quiet.issues.includes('quiet'));assert(Math.abs(quiet.audio[10])>Math.abs(wave[10]));
+assert(prepareSpeechAudio(new Float32Array(1000)).silent);
+assert(prepareSpeechAudio(Float32Array.from({length:1000},(_,i)=>i%2?1:-1)).issues.includes('clipping'));
+const opposite=Float32Array.from(wave,n=>-n),chosen=chooseAudioChannel([wave,opposite]);
+assert(chosen.cancellation);assert.equal(chosen.samples,wave,'Opposite-phase stereo must not cancel speech');
+const before=new Uint8Array(96*54).fill(255),frame=(x,y,w,h)=>{const out=before.slice();for(let r=y;r<y+h;r++)for(let c=x;c<x+w;c++)out[r*96+c]=0;return out;};
+assert.equal(slideChange(before,before),'same');
+assert.equal(slideChange(before,frame(45,22,3,3)),'motion','Cursor movement must not consume an OCR frame');
+assert.equal(slideChange(before,frame(79,39,17,15)),'motion','Corner webcam movement must not consume an OCR frame');
+assert.equal(slideChange(before,frame(12,13,70,12)),'slide','A broad teaching-content change triggers OCR');
+assert.deepEqual(slideCrop('right',1000,600),{x:220,y:0,width:780,height:600});
+let clock=0,progress;const report=lectureReporter(p=>progress=p,()=>clock);
+report({stage:'speech',completed:60,total:180});assert.equal(progress.stages.speech.etaSeconds,undefined);
+clock=3000;report({stage:'speech',completed:90,total:180});assert.equal(progress.stages.speech.etaSeconds,9,'ETA must measure new work after a resumed checkpoint');
+report({stage:'speech',status:'done'});assert.equal(progress.stages.speech.etaSeconds,undefined);assert.equal(progress.stages.speech.percent,100);
+const units=[{label:'0:00',text:'Mitosis creates two daughter cells.',transcript:{start:0,end:40,reviewed:false}},{label:'5:00',text:'DNA does not contain uracil. The measured amount was 50 percent.',transcript:{start:300,end:340,reviewed:false,issues:['quiet']}}];
+assert.deepEqual(transcriptSearch(units,'DNA uracil'),[1]);assert.deepEqual(transcriptSearch(units,'5:20'),[1]);assert.deepEqual(transcriptSearch(units,'missing'),[]);
+assert.equal(priorityTranscriptSections(units)[0].index,1);assert.equal(lectureChapters(units).length,2);
+const left={start:0,end:62,text:'The next step is to measure the pressure.'},right={start:58,end:75,text:'is to measure the pressure. Then record the result.'};
+const joined=appendSpeechSegments([left],[right]);assert(!joined[1].text.startsWith('is to measure'));
+assert.equal(appendSpeechSegments([left],[{...right,start:65}])[1].text,right.text,'A later real repetition must remain');
+const source=(id,name,units)=>({material:{id,name,kind:'txt',units:units.length,size:100,warnings:[]},parsed:{units,warnings:[]}});
+const rows=Array.from({length:80},(_,i)=>({label:'Slide '+i,text:`Cell pathway ${i}\nPathway ${i} is a cellular mechanism that transports molecule ${i} through the membrane.\nStage ${i} is the phase that produces protein ${i} for energy storage.`}));
+rows.push({label:'Reminder',text:'Announcements\nThe assignment is due Friday.\nOffice hours are on Monday.'});
+const extra=source('other','Roman-history.txt',[{label:'Empire',text:'Roman empire\nAugustus is the first emperor of the Roman Empire.\nThe Senate is a political assembly in ancient Rome.'}]);
+for(const depth of ['quick','deep']){
+ const guide=generateGuide({id:'large',subject:'Cell biology',focus:'Pathway 79',depth,mode:'materials'},[source('bio','Cell-biology.txt',rows),extra]);
+ assert(guide.cards.length<=(depth==='quick'?20:32));assert(guide.questions.length<=(depth==='quick'?12:18));assert(guide.topics.length<=guide.cards.length);
+ assert(!guide.cards.some(c=>/assignment|office hours|Augustus|Senate/i.test(c.back)));
+ assert(!guide.questions.some(q=>/Augustus|Senate|Friday/i.test(q.explanation)));
+ assert.equal(guide.materials.length,2,'Original sources remain available');
+ assert(guide.selection.availableCards>100);assert(guide.sourceCoverage.find(s=>s.sourceId==='other').notRepresented.length);
+ assert(guide.sourceCoverage.find(s=>s.sourceId==='bio').notRepresented.length>50);
+}
+const focus=generateGuide({id:'focus',subject:'Biology',focus:'Photosynthesis',depth:'quick',mode:'materials'},[source('bio','Biology.txt',[...rows,{label:'Last slide',text:'Photosynthesis\nPhotosynthesis is the process of converting light energy into chemical energy in sugars.'}])]);
+assert(focus.cards.some(c=>c.back.includes('Photosynthesis')),'A focus topic on the final slide must survive the cap');
+console.log('Video upgrades and concise guides: channel repair, quiet/silent audio, slide motion, resumed ETA, search, chapters, boundary deduplication, subject relevance, coverage and focus caps passed.');
+
+assert.deepEqual([3,10,11,30,31,75,76,800].map(minimumCards),[3,5,10,10,15,15,20,20]);
+assert.deepEqual(cardBudget(90,'quick',5),{minimum:20,target:20});
+assert.deepEqual(cardBudget(90,'quick',60),{minimum:20,target:60});
+assert.deepEqual(cardBudget(9,'deep',100),{minimum:5,target:9});
+for(const requested of [5,45,200]){
+ const selected=generateGuide({id:'custom',subject:'Cell biology',focus:'',depth:'quick',cardTarget:requested,mode:'materials'},[source('bio','Cell-biology.txt',rows)]);
+ assert.equal(selected.cards.length,Math.min(160,Math.max(20,requested)));
+ assert.equal(selected.selection.minimumCards,20);
+ assert(selected.questions.length<=12);
+ assert.equal(new Set(selected.cards.map(c=>c.id)).size,selected.cards.length);
+}
+console.log('Material-based card minimums, larger requested sets, insufficient-content handling and short question sessions passed.');

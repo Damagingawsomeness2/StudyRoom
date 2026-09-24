@@ -15,7 +15,19 @@ A private study workspace that turns classroom materials into source-linked guid
 
 ### Using lecture videos
 
-Choose **Add a lecture video** and select your recording. You can attach SRT or VTT captions; without captions, Studyroom automatically transcribes English speech on your device. Keep the tab open until processing and upload finish, then use **Review transcript** to check and correct the text. Turn on **Read text shown in the video** to include text from the video’s slides.
+Choose **Add lecture video** and select your recording. You can attach SRT or VTT captions; without captions, Studyroom automatically transcribes English speech on your device. Keep the tab open until processing and upload finish, then use **Review transcript** to check and correct the text. Turn on **Read text shown in the video** to include text from the video’s slides.
+
+**Accuracy** uses a larger English speech model with a full-precision encoder. Its first download is about 500–600 MB; **Balanced** uses a smaller model. Supported browsers use GPU acceleration and fall back to the CPU when needed. Neither mode uses OpenAI API credits. Quiet audio is normalized, opposite-phase stereo is repaired, and overlapping chunk text is deduplicated. Transcripts still need checking, especially technical terms and numbers.
+
+The upload shows separate stages and estimates based on completed work. Choose the slide area to avoid a presenter panel; small cursor and corner motion are ignored, with periodic reads to catch local additions. Keep the tab open; completed sections are saved for retry.
+
+In **Review transcript**, search words or a timestamp such as `12:30`, jump through suggested chapters, or use **Suggested checks** for quiet audio, repeated words, numbers, and negation. These are review cues, not accuracy scores. **Re-transcribe with Accuracy** proposes new wording for a selected speech section; compare it before accepting and saving. English is the automatic transcription language.
+
+### Keep guides manageable
+
+**Quick review** defaults to up to 20 cards and 12 questions; **In depth** defaults to up to 32 cards and 18 questions. Enter a number in **How many flashcards?** to request 5–200 cards. The minimum is based on distinct relevant source-backed cards after merging: up to 10 available → 5 minimum; 11–30 → 10; 31–75 → 15; 76 or more → 20. When fewer than 5 are supported, only those available are used. A request below the minimum is raised, and a request above the available content never produces filler. More flashcards do not increase the diagnostic or practice-question limits. Learning objectives, your subject and focus, and concepts repeated across sources influence selection. Class administration is skipped. Subject matching is conservative and based on source wording and filenames; use the focus field to prioritize a chapter. **Coverage** explains omitted sections, and **Sources** retains every original. A concise guide is not an exhaustive exam checklist.
+
+Rebuild an existing guide to apply the new selection rules. Unchanged selected concepts keep their progress.
 
 ### Adding new lectures later
 
@@ -24,7 +36,7 @@ Open your saved guide and choose **Update materials** to add more files. Progres
 ## What Studyroom supports
 
 - Upload multiple PDF, PowerPoint (.pptx), Word (.docx), TXT, Markdown, CSV, PNG, JPG, or WebP files. Documents and images allow 30 MB per file with no application file-count limit. Printed English in scanned pages and embedded images can be read in the browser; review extracted text for mistakes. Legacy .ppt and .doc files must be exported first.
-- Lecture videos support MP4, MOV, M4V, and WebM, up to 1 GB and 3 hours each, with automatic English transcription or supplied captions. Optional screen-text reading checks for slide changes every 5 seconds; upload original slides for material that brief frames, diagrams, or handwriting may miss.
+- Lecture videos support MP4, MOV, M4V, and WebM, up to 1 GB and 3 hours each, with automatic English transcription or supplied captions. Optional screen-text reading checks for slide changes every 2 seconds; upload original slides for material that brief frames, diagrams, or handwriting may miss.
 - Repeated topic headings and similar facts are combined, while distinct facts and source references remain available. Built-in generation selects key passages and creates recall questions; it does not use a language model.
 - An optional knowledge check samples distinct topics. Missed, unsure, and unchecked topics remain in the focused guide. The full guide is always available.
 - Guides, diagnostic answers, quiz answers, and flashcard progress persist using D1 and R2.
